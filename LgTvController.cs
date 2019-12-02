@@ -18,30 +18,7 @@ namespace LagrangianDesign.LgTvControl {
             ) {
             (Logger, LgTvSerialPort) = (logger, lgTvSerialPort);
         }
-
-        [HttpGet("Backlight")]
-        public Int32 GetBacklight() => LgTvSerialPort.Backlight;
-        [HttpPut("Backlight")]
-        public void SetBacklight([FromBodyAttribute] Int32 value) {
-            LgTvSerialPort.Backlight = value;
-        } 
-        [HttpGet("Input")]
-        public Int32 GetInput() => LgTvSerialPort.Input;
-        [HttpPut("Input")]
-        public void SetInput([FromBodyAttribute] Int32 value) {
-            LgTvSerialPort.Input = value;
-        } 
-        [HttpGet("OnScreenDisplay")]
-        public Boolean GetOnScreenDisplay() => LgTvSerialPort.OnScreenDisplay;
-        [HttpPut("OnScreenDisplay")]
-        public void SetOnScreenDisplay([FromBodyAttribute] Boolean value) {
-            LgTvSerialPort.OnScreenDisplay  = value;
-        } 
-        [HttpGet("Power")]
-        public Boolean GetPower() => LgTvSerialPort.Power;
-        [HttpPut("Power")]
-        public void SetPower([FromBodyAttribute] Boolean value) {
-            LgTvSerialPort.Power = value;
-        } 
+        // GET and PUT methods for all public properties of LgTvSerialPort
+        // are inserted here before this class is compiled (at runtime).
     }
 }

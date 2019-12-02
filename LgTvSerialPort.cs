@@ -11,7 +11,7 @@ using static System.Globalization.NumberStyles;
 
 namespace LagrangianDesign.LgTvControl {
     public sealed class LgTvSerialPort : IDisposable {
-        public LgTvSerialPort(String name, Int32 setId) {
+        public LgTvSerialPort(String name) {
             if (name is null) {
                 throw new ArgumentNullException(nameof(name));
             }
@@ -37,12 +37,9 @@ namespace LagrangianDesign.LgTvControl {
             }
         }
 
-        Int32 SendCommand(String commandCode, Int32 data) {
+        Byte SendCommand(String commandCode, Byte data) {
             if (commandCode?.Length != 2) {
                 throw new ArgumentException($"Invalid command code {commandCode.Quoted()}.", nameof(commandCode));
-            }
-            if (data < 0 || data > 255) {
-                throw new ArgumentOutOfRangeException(nameof(data));
             }
             var port = Port;
             lock (port) {
@@ -54,25 +51,14 @@ namespace LagrangianDesign.LgTvControl {
                 if (response.Length == 9
                     && response.StartsWith(command[1])
                     && response[5..^2].Equals("OK", Ordinal)
-                    && Int32.TryParse(response[7..^0], HexNumber, CultureInfo.InvariantCulture, out var result)) {
+                    && Byte.TryParse(response[7..^0], HexNumber, CultureInfo.InvariantCulture, out var result)) {
                     return result;
                 }
                 throw new IOException($"Response {response.Quoted()} to command {command[0..^1].Quoted()} not OK.");
             }
         }
 
-        void SetBoolean(String commandCode, Boolean value)
-            => SendCommand(commandCode, value ? 1 : 0);
-        
-        Boolean GetBoolean(String commandCode) => SendCommand(commandCode, 255) == 1;
-
-        void SetPercent(String commandCode, Int32 value) {
-            if (value < 0 || value > 100) {
-                throw new IOException($"Invalid percent value {value}.");
-            }
-            SendCommand(commandCode, value);
-        }
-        Int32 GetPercent(String commandCode) {
+        Byte GetPercent(String commandCode) {
             var response = SendCommand(commandCode, 255);
             if (response < 0 || response > 100) {
                 throw new IOException($"Invalid percent value {response}.");
@@ -80,26 +66,41 @@ namespace LagrangianDesign.LgTvControl {
             return response;
         }
 
-
-        public Int32 Input {
-            get => SendCommand("xb", 255);
-            set => SendCommand("xb", value);
+        void SetPercent(String commandCode, Byte value) {
+            if (value < 0 || value > 100) {
+                throw new IOException($"Invalid percent value {value}.");
+            }
+            SendCommand(commandCode, value);
         }
 
-        public Boolean Power {
-            get => GetBoolean("ka");
-            set => SetBoolean("ka", value);
-        }
+        public Byte Backlight { get => GetPercent("mg"); set => SetPercent("mg", value); }
+        public Byte Balance { get => GetPercent("kt"); set => SetPercent("kt", value); }
+        public Byte Bass { get => GetPercent("ks"); set => SetPercent("ks", value); }
+        public Byte Brightness { get => GetPercent("kh"); set => SetPercent("kh", value); }
+        public Byte Color { get => GetPercent("ki"); set => SetPercent("ki", value); }
+        public Byte ColorTemperature { get => GetPercent("xu"); set => SetPercent("xu", value); }
+        public Byte Contrast { get => GetPercent("kg"); set => SetPercent("kg", value); }
+        public Byte Sharpness { get => GetPercent("kk"); set => SetPercent("kk", value); }
+        public Byte Tint { get => GetPercent("kj"); set => SetPercent("kj", value); }
+        public Byte Treble { get => GetPercent("kr"); set => SetPercent("kr", value); }
+        public Byte Volume { get => GetPercent("kf"); set => SetPercent("kf", value); }
 
-        public Boolean OnScreenDisplay {
-            get => GetBoolean("kl");
-            set => SetBoolean("kl", value);
-        }
+        Boolean GetBoolean(String commandCode) => SendCommand(commandCode, 255) == 1;
+        void SetBoolean(String commandCode, Boolean value) => SendCommand(commandCode, (Byte)(value ? 1 : 0));
 
-        public Int32 Backlight {
-            get => GetPercent("mg");
-            set => SetPercent("mg", value);
-        }
+        public Boolean Mute { get => GetBoolean("ke"); set => SetBoolean("ke", value); }
+        public Boolean OnScreenDisplay { get => GetBoolean("kl"); set => SetBoolean("kl", value); }
+        public Boolean Power { get => GetBoolean("ka"); set => SetBoolean("ka", value); }
+        public Boolean RemoteControlLock { get => GetBoolean("km"); set => SetBoolean("km", value); }
+
+        Byte GetByte(String commandCode) => SendCommand(commandCode, 255);
+        void SetByte(String commandCode, Byte value) => SendCommand(commandCode, value);
+
+        public Byte AspectRatio { get => GetByte("kc"); set => SetByte("kc", value); }
+        public Byte EnergySaving { get => GetByte("jq"); set => SendCommand("jq", value); }
+        public Byte ImageStickingMinimizationMethod { get => GetByte("jp"); set => SetByte("jp", value); }
+        public Byte Input { get => GetByte("xb"); set => SetByte("xb", value); }
+        public Byte ScreenMute { get => GetByte("kd"); set => SetByte("kd", value); }
 
         public void Dispose() {
             var port = Interlocked.Exchange(ref _Port, null);
