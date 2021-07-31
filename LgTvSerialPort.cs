@@ -31,7 +31,6 @@ namespace LagrangianDesign.LgTvControl {
                     _Port.StopBits = StopBits.One;
                     _Port.ReadTimeout = 2000;
                     _Port.WriteTimeout = 2000;
-                    _Port.Open();
                 }
                 return _Port;
             }
@@ -43,18 +42,23 @@ namespace LagrangianDesign.LgTvControl {
             }
             var port = Port;
             lock (port) {
-                port.DiscardInBuffer();
-                port.DiscardOutBuffer();
-                var command = $"{commandCode} 00 {data:X2}\x0D";
-                port.Write(command);
-                var response = port.ReadTo("x");
-                if (response.Length == 9
-                    && response.StartsWith(command[1])
-                    && response[5..^2].Equals("OK", Ordinal)
-                    && Byte.TryParse(response[7..^0], HexNumber, CultureInfo.InvariantCulture, out var result)) {
-                    return result;
+                port.Open();
+                try {
+                    port.DiscardInBuffer();
+                    port.DiscardOutBuffer();
+                    var command = $"{commandCode} 00 {data:X2}\x0D";
+                    port.Write(command);
+                    var response = port.ReadTo("x");
+                    if (response.Length == 9
+                        && response.StartsWith(command[1])
+                        && response[5..^2].Equals("OK", Ordinal)
+                        && Byte.TryParse(response[7..^0], HexNumber, CultureInfo.InvariantCulture, out var result)) {
+                        return result;
+                    }
+                    throw new IOException($"Response {response.Quoted()} to command {command[0..^1].Quoted()} not OK.");
+                } finally {
+                    port.Close();
                 }
-                throw new IOException($"Response {response.Quoted()} to command {command[0..^1].Quoted()} not OK.");
             }
         }
 
