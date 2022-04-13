@@ -42,7 +42,7 @@ def _main(*args):
         if valstr == 'toggle':
             put(setting, not get(setting))
         elif valstr.startswith('+') or valstr.startswith('-'):
-            put(setting, get(setting) + int(valstr))
+            put(setting, max(0, min(get(setting) + int(valstr), 100)))
         else:
             if valstr in ('true','on'):
                 value = True
